@@ -43,7 +43,7 @@ func (s *state) firmware(args []string) {
 	fmt.Printf(fmtstr, "machine", "BMC", "Boot", "SDR", "BIOS")
 
 	for _, m := range machines {
-		if filter != "" && !Glob(filter, m) && !Glob("lin*", m) {
+		if filter != "" && !Glob(filter, m) {
 			continue
 		}
 
