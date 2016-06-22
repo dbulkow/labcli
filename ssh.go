@@ -55,7 +55,9 @@ func (s *state) ssh(args []string) {
 
 	sshargs := make([]string, 0)
 	sshargs = append(sshargs, "ssh")
-	sshargs = append(sshargs, strings.Fields(*sshopt)...)
+	if *sshopt != "" {
+		sshargs = append(sshargs, strings.Fields(*sshopt)...)
+	}
 	sshargs = append(sshargs, fmt.Sprintf("%s@%s", *user, addr))
 
 	n := flagset.NArg() - 1
