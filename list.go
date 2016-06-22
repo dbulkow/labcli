@@ -1,21 +1,15 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"os"
-	"time"
 )
 
 const ListUsage = `
 Usage: lab list [OPTIONS] [machine filter]
 
 List ftServers
-
-Options:
 `
 
 func (s *state) list(args []string) {
@@ -31,65 +25,59 @@ func (s *state) list(args []string) {
 		return
 	}
 
-	client := &http.Client{Timeout: time.Second * 20}
+	filter := ""
+	if flagset.NArg() == 1 {
+		filter = flagset.Arg(0)
+	}
 
-	rmach, err := client.Get(s.labmap + "/v1/machines/")
+	reply, err := s.getData(s.labmap, Machines)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "connection to labmap failed:", err)
-		return
-	}
-	defer rmach.Body.Close()
-
-	if rmach.StatusCode != 200 {
-		fmt.Fprintln(os.Stderr, "labmap returned code:", rmach.StatusCode)
+		fmt.Fprintln(os.Stderr, "labmap(machines):", err)
 		return
 	}
 
-	b, err := ioutil.ReadAll(rmach.Body)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "read from labmap failed:", err)
-		return
-	}
+	machines := reply.Machines
 
-	reply := &Reply{}
+	fmtstr := "%-8s %-3s %-3s %-4s %-5s %-5s\n"
 
-	if err := json.Unmarshal(b, reply); err != nil {
-		fmt.Fprintln(os.Stderr, "unmarshal labmap:", err)
-		return
-	}
+	fmt.Printf(fmtstr, "machine", "cab", "pos", "plat", "power", "state")
 
-	if reply.Status == "Failed" {
-		fmt.Fprintln(os.Stderr, "labmap machine request failed:", reply.Error)
-		return
-	}
+	for _, m := range machines {
+		if filter != "" && !Glob(filter, m) {
+			continue
+		}
 
-	for _, m := range reply.Machines {
-		rcap, err := client.Get(s.labmap + "/v1/cabinet/?machine=" + m)
+		reply, err := s.getData(s.labmap, Cabinet+"?machine="+m)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "connection to labmap failed:", err)
+			fmt.Fprintln(os.Stderr, "labmap(cabinet):", err)
 			return
 		}
-		defer rcap.Body.Close()
 
-		b, err = ioutil.ReadAll(rcap.Body)
+		cab := reply.Cabinets[m]
+
+		reply, err = s.getData(s.platformid, PlatformID+m)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "read from labmap failed:", err)
+			fmt.Fprintln(os.Stderr, "platformid:", err)
 			return
 		}
 
-		rpy2 := &Reply{}
+		bmc := reply.BMC
 
-		if err := json.Unmarshal(b, rpy2); err != nil {
-			fmt.Fprintln(os.Stderr, "unmarshal labmap:", err)
+		primary := 0
+		if bmc[0].Primary {
+			primary = 0
+		} else if bmc[1].Primary {
+			primary = 1
+		} else {
+			fmt.Fprintln(os.Stderr, "no primary BMC")
 			return
 		}
 
-		if rpy2.Status == "Failed" {
-			fmt.Fprintln(os.Stderr, "labmap cabinet request failed:", reply.Error)
-			return
+		power := ""
+		if bmc[primary].PowerOn == false {
+			power = "off"
 		}
 
-		cab := rpy2.Cabinets[m]
-		fmt.Println(m, cab.Cabinet, cab.Position)
+		fmt.Printf(fmtstr, m, cab.Cabinet, cab.Position, bmc[primary].Platform, power, bmc[primary].State)
 	}
 }

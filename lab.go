@@ -7,37 +7,11 @@ import (
 )
 
 const (
-	MACMap = "http://yin.mno.stratus.com/"
-	LabMap = "http://yin.mno.stratus.com/"
-	Etcd   = "http://yin.mno.stratus.com:2379/"
+	MACMap        = "http://yin.mno.stratus.com/"
+	LabMap        = "http://yin.mno.stratus.com/"
+	Etcd          = "http://yin.mno.stratus.com:2379/"
+	PlatformIDurl = "http://yin.mno.stratus.com/"
 )
-
-type cabinet struct {
-	VTM0     string `json:"vtm0"`
-	VTM1     string `json:"vtm1"`
-	Cabinet  string `json:"cabinet"`
-	Position string `json:"position"`
-	COM1     string `json:"com1"`
-	COM2     string `json:"com2"`
-	Outlet   string `json:"outlet"`
-	KVM      string `json:"kvm"`
-	PDU0     string `json:"pdu0"`
-	PDU1     string `json:"pdu1"`
-}
-
-type address struct {
-	MAC     string `json:"macaddr"`
-	IP      string `json:"ip"`
-	Updated int64  `json:"updated"`
-}
-
-type Reply struct {
-	Status   string             `json:"status"`
-	Error    string             `json:"error"`
-	Cabinets map[string]cabinet `json:"cabinets"`
-	Machines []string           `json:"machines"`
-	Addrs    map[string]address `json:"addrs"`
-}
 
 const Usage = `Usage: lab [OPTIONS] COMMAND [OPTIONS] [arg...]
        lab [ --help | -v | --version ]
@@ -59,9 +33,10 @@ const CmdUsage = `Commands:
 `
 
 type state struct {
-	macmap string
-	labmap string
-	etcd   string
+	macmap     string
+	labmap     string
+	etcd       string
+	platformid string
 }
 
 func main() {
@@ -74,9 +49,10 @@ func main() {
 	//	ConfFile := UserHomeDir() + "/.config/labcli.conf"
 
 	var (
-		macmap = flag.String("macmap", MACMap, "URL for macmap")
-		labmap = flag.String("labmap", LabMap, "URL for labmap")
-		etcd   = flag.String("etcd", Etcd, "URL for etcd")
+		macmap     = flag.String("macmap", MACMap, "URL for macmap")
+		labmap     = flag.String("labmap", LabMap, "URL for labmap")
+		etcd       = flag.String("etcd", Etcd, "URL for etcd")
+		platformid = flag.String("platformid", PlatformIDurl, "URL for platformid")
 	)
 
 	flag.Parse()
@@ -89,9 +65,10 @@ func main() {
 	args := flag.Args()
 
 	s := &state{
-		macmap: *macmap,
-		labmap: *labmap,
-		etcd:   *etcd,
+		macmap:     *macmap,
+		labmap:     *labmap,
+		etcd:       *etcd,
+		platformid: *platformid,
 	}
 
 	subcmds := map[string]func([]string){
