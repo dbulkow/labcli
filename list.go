@@ -55,18 +55,36 @@ func (s *state) list(args []string) {
 
 		cab := reply.Cabinets[m]
 
-		reply, err = s.getData(s.platformid, PlatformID+m)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "platformid:", err)
-			return
+		var b []*bmc
+
+		if Glob("lin*", m) {
+			reply, err = s.getData(s.platformid, PlatformID+m)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, "platformid:", err)
+				return
+			}
+
+			b = reply.BMC
+		} else {
+			b = make([]*bmc, 2)
+			b[0] = &bmc{
+				Primary:  true,
+				Platform: "",
+				PowerOn:  true,
+				State:    "",
+			}
+			b[1] = &bmc{
+				Primary:  false,
+				Platform: "",
+				PowerOn:  true,
+				State:    "",
+			}
 		}
 
-		bmc := reply.BMC
-
 		primary := 0
-		if bmc[0].Primary {
+		if b[0].Primary {
 			primary = 0
-		} else if bmc[1].Primary {
+		} else if b[1].Primary {
 			primary = 1
 		} else {
 			fmt.Fprintln(os.Stderr, "no primary BMC")
@@ -74,10 +92,10 @@ func (s *state) list(args []string) {
 		}
 
 		power := ""
-		if bmc[primary].PowerOn == false {
+		if b[primary].PowerOn == false {
 			power = "off"
 		}
 
-		fmt.Printf(fmtstr, m, cab.Cabinet, cab.Position, bmc[primary].Platform, power, bmc[primary].State)
+		fmt.Printf(fmtstr, m, cab.Cabinet, cab.Position, b[primary].Platform, power, b[primary].State)
 	}
 }
