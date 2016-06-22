@@ -25,7 +25,7 @@ func (s *state) telnet(args []string) {
 	flagset := flag.NewFlagSet("telnet", flag.ExitOnError)
 
 	flagset.Usage = func() {
-		fmt.Fprintln(os.Stderr, ListUsage)
+		fmt.Fprintln(os.Stderr, TelnetUsage)
 		flagset.PrintDefaults()
 	}
 

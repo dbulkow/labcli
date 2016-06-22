@@ -11,6 +11,7 @@ import (
 const (
 	Machines   = "/v1/machines/"
 	Cabinet    = "/v1/cabinet/"
+	Address    = "/v1/address/"
 	PlatformID = "/v1/platformid/"
 )
 
@@ -54,6 +55,12 @@ type bmc struct {
 	Firmware firmware `json:"firmware"`
 }
 
+type addr struct {
+	MAC     string `json:"macaddr"`
+	IP      string `json:"ip"`
+	Updated int64  `json:"updated"`
+}
+
 type Reply struct {
 	Status   string             `json:"status"`
 	Error    string             `json:"error"`
@@ -61,15 +68,26 @@ type Reply struct {
 	Machines []string           `json:"machines"`
 	Addrs    map[string]address `json:"addrs"`
 	Machine  string             `json:"machine"` /* platformid */
-	BMC      []*bmc             `json:"bmc,omitempty"`
+	BMC      []*bmc             `json:"bmc"`
+}
+
+type MacMapReply struct {
+	Status   string            `json:"status"`
+	Error    string            `json:"error"`
+	Macaddrs map[string]string `json:"macaddrs"`
+	Address  map[string]*addr  `json:"addrs"`
 }
 
 func (s *state) getData(url, uri string) (*Reply, error) {
+	if s.debug {
+		fmt.Println("getData", url, uri)
+	}
+
 	client := &http.Client{Timeout: time.Second * 20}
 
 	resp, err := client.Get(url + uri)
 	if err != nil {
-		return nil, fmt.Errorf("connection to %s failed: %v", uri+url, err)
+		return nil, fmt.Errorf("connection to %s failed: %v", url+uri, err)
 	}
 	defer resp.Body.Close()
 
@@ -93,4 +111,41 @@ func (s *state) getData(url, uri string) (*Reply, error) {
 	}
 
 	return reply, nil
+}
+
+func (s *state) getAddr(vtm string) (string, error) {
+	url := s.macmap + Address + vtm
+
+	if s.debug {
+		fmt.Println("getAddr", url)
+	}
+
+	client := &http.Client{Timeout: time.Second * 20}
+
+	resp, err := client.Get(url)
+	if err != nil {
+		return "", fmt.Errorf("connection to %s failed: %v", url, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return "", fmt.Errorf("service returned code: %s", http.StatusText(resp.StatusCode))
+	}
+
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("read failed: %v", err)
+	}
+
+	reply := &MacMapReply{}
+
+	if err := json.Unmarshal(b, reply); err != nil {
+		return "", fmt.Errorf("unmarshal: %v", err)
+	}
+
+	if reply.Status == "Failed" {
+		return "", fmt.Errorf("request failed: %s", reply.Error)
+	}
+
+	return reply.Address[vtm].IP, nil
 }

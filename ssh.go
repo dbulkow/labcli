@@ -1,17 +1,13 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"os"
 	"os/exec"
 	"os/user"
 	"strings"
 	"syscall"
-	"time"
 )
 
 const SshUsage = `
@@ -26,7 +22,7 @@ func (s *state) ssh(args []string) {
 	flagset := flag.NewFlagSet("ssh", flag.ExitOnError)
 
 	flagset.Usage = func() {
-		fmt.Fprintln(os.Stderr, ListUsage)
+		fmt.Fprintln(os.Stderr, SshUsage)
 		flagset.PrintDefaults()
 	}
 
@@ -51,47 +47,16 @@ func (s *state) ssh(args []string) {
 
 	mach := flagset.Arg(0)
 
-	client := &http.Client{Timeout: time.Second * 20}
-
-	resp, err := client.Get(s.etcd + "/v2/keys/hosts/" + mach)
+	addr, err := s.getHost(mach)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "connection to labmap failed:", err)
-		return
-	}
-	defer resp.Body.Close()
-
-	b, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "read from labmap failed:", err)
-		return
-	}
-
-	reply := &struct {
-		Action string `json:"action"`
-		Node   struct {
-			Key           string    `json:"key"`
-			Value         string    `json:"value"`
-			Expiration    time.Time `json:"expiration"`
-			TTL           int64     `json:"ttl"`
-			ModifiedIndex int       `json:"modifiedindex"`
-			CreatedIndex  int       `json:"createdindex"`
-		} `json:"node"`
-	}{}
-
-	if err := json.Unmarshal(b, reply); err != nil {
-		fmt.Fprintln(os.Stderr, "unmarshal labmap:", err)
-		return
-	}
-
-	if reply.Node.Value == "" {
-		fmt.Fprintln(os.Stderr, "ssh address not available")
+		fmt.Fprintln(os.Stderr, "getHost:", err)
 		return
 	}
 
 	sshargs := make([]string, 0)
 	sshargs = append(sshargs, "ssh")
 	sshargs = append(sshargs, strings.Fields(*sshopt)...)
-	sshargs = append(sshargs, fmt.Sprintf("%s@%s", *user, reply.Node.Value))
+	sshargs = append(sshargs, fmt.Sprintf("%s@%s", *user, addr))
 
 	n := flagset.NArg() - 1
 	for i := 1; n > 0; i, n = i+1, n-1 {

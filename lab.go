@@ -37,6 +37,8 @@ type state struct {
 	labmap     string
 	etcd       string
 	platformid string
+
+	debug bool
 }
 
 func main() {
@@ -53,6 +55,7 @@ func main() {
 		labmap     = flag.String("labmap", LabMap, "URL for labmap")
 		etcd       = flag.String("etcd", Etcd, "URL for etcd")
 		platformid = flag.String("platformid", PlatformIDurl, "URL for platformid")
+		debug      = flag.Bool("debug", false, "Enable communication debugging")
 	)
 
 	flag.Parse()
@@ -69,6 +72,7 @@ func main() {
 		labmap:     *labmap,
 		etcd:       *etcd,
 		platformid: *platformid,
+		debug:      *debug,
 	}
 
 	subcmds := map[string]func([]string){
