@@ -26,13 +26,6 @@ func (s *state) ssh(args []string) {
 		flagset.PrintDefaults()
 	}
 
-	u, err := user.Current()
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "Unable to determine username:", err)
-		return
-	}
-
-	user := flagset.String("user", u.Username, "User name to pass to ssh")
 	sshopt := flagset.String("ssh", "", "ssh command line options")
 
 	if err := flagset.Parse(args); err != nil {
@@ -45,7 +38,23 @@ func (s *state) ssh(args []string) {
 		return
 	}
 
-	mach := flagset.Arg(0)
+	target := strings.Split(flagset.Arg(0), "@")
+
+	u, err := user.Current()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Unable to determine username:", err)
+		return
+	}
+
+	user := u.Username
+	mach := ""
+
+	if len(target) == 2 {
+		user = target[0]
+		mach = target[1]
+	} else {
+		mach = target[0]
+	}
 
 	addr, err := s.getHost(mach)
 	if err != nil {
@@ -58,7 +67,7 @@ func (s *state) ssh(args []string) {
 	if *sshopt != "" {
 		sshargs = append(sshargs, strings.Fields(*sshopt)...)
 	}
-	sshargs = append(sshargs, fmt.Sprintf("%s@%s", *user, addr))
+	sshargs = append(sshargs, fmt.Sprintf("%s@%s", user, addr))
 
 	n := flagset.NArg() - 1
 	for i := 1; n > 0; i, n = i+1, n-1 {
