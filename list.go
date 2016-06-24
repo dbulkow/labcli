@@ -20,6 +20,8 @@ func (s *state) list(args []string) {
 		flagset.PrintDefaults()
 	}
 
+	quiet := flagset.Bool("q", false, "Don't display header")
+
 	if err := flagset.Parse(args); err != nil {
 		fmt.Fprintln(os.Stderr, "flag parse error:", err)
 		return
@@ -40,7 +42,9 @@ func (s *state) list(args []string) {
 
 	fmtstr := "%-8s %-3s %-3s %-4s %-5s %-5s\n"
 
-	fmt.Printf(fmtstr, "machine", "cab", "pos", "plat", "power", "state")
+	if !*quiet {
+		fmt.Printf(fmtstr, "machine", "cab", "pos", "plat", "power", "state")
+	}
 
 	for _, m := range machines {
 		if filter != "" && !Glob(filter, m) {
