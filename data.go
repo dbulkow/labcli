@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"time"
+
+	"github.com/spf13/cobra"
 )
 
 const (
@@ -34,7 +36,7 @@ type address struct {
 	Updated int64  `json:"updated"`
 }
 
-type firmware struct {
+type versions struct {
 	BMCSize    int    `json:"bmcsize"`
 	BMCA       string `json:"bmca"`
 	BMCB       string `json:"bmcb"`
@@ -52,7 +54,7 @@ type bmc struct {
 	State    string   `json:"state"`
 	CRU      int      `json:"cru"`
 	Primary  bool     `json:"primary"`
-	Firmware firmware `json:"firmware"`
+	Firmware versions `json:"firmware"`
 }
 
 type addr struct {
@@ -78,8 +80,11 @@ type MacMapReply struct {
 	Address  map[string]*addr  `json:"addrs"`
 }
 
-func (s *state) getData(url, uri string) (*Reply, error) {
-	if s.debug {
+func getData(cmd *cobra.Command, service, uri string) (*Reply, error) {
+	verbose := cmd.Flag("verbose").Value.String()
+	url := cmd.Flag(service).Value.String()
+
+	if verbose == "true" {
 		fmt.Println("getData", url, uri)
 	}
 
@@ -113,10 +118,11 @@ func (s *state) getData(url, uri string) (*Reply, error) {
 	return reply, nil
 }
 
-func (s *state) getAddr(vtm string) (string, error) {
-	url := s.macmap + Address + vtm
+func getAddr(cmd *cobra.Command, vtm string) (string, error) {
+	verbose := cmd.Flag("verbose").Value.String()
+	url := cmd.Flag("macmap").Value.String() + Address + vtm
 
-	if s.debug {
+	if verbose == "true" {
 		fmt.Println("getAddr", url)
 	}
 

@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -11,41 +10,35 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/spf13/cobra"
 )
 
-const TelnetUsage = `
-Usage: lab telnet [OPTIONS] <ftServer>
+var telnetCmd = &cobra.Command{
+	Use:   "telnet <ftServer>",
+	Short: "Exec telnet for an ftServer",
+	Run:   telnet,
+}
 
-Exec telnet for an ftServer
+var com1 bool
 
-Options:
-`
+func init() {
+	telnetCmd.Flags().BoolVarP(&com1, "com1", "1", false, "Use COM1")
+}
 
-func (s *state) telnet(args []string) {
-	flagset := flag.NewFlagSet("telnet", flag.ExitOnError)
-
-	flagset.Usage = func() {
-		fmt.Fprintln(os.Stderr, TelnetUsage)
-		flagset.PrintDefaults()
-	}
-
-	com1 := flagset.Bool("com1", false, "Use COM1")
-
-	if err := flagset.Parse(args); err != nil {
-		fmt.Fprintln(os.Stderr, "flag parse error:", err)
+func telnet(cmd *cobra.Command, args []string) {
+	if len(args) < 1 {
+		cmd.Usage()
 		return
 	}
 
-	if flagset.NArg() < 1 {
-		flagset.Usage()
-		return
-	}
-
-	mach := flagset.Arg(0)
+	mach := args[0]
 
 	client := &http.Client{Timeout: time.Second * 20}
 
-	resp, err := client.Get(s.labmap + "/v1/cabinet/?machine=" + mach)
+	labmap := cmd.Flag("labmap").Value.String()
+
+	resp, err := client.Get(labmap + "/v1/cabinet/?machine=" + mach)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "connection to labmap failed:", err)
 		return
@@ -73,7 +66,7 @@ func (s *state) telnet(args []string) {
 	cab := reply.Cabinets[mach]
 
 	cmdline := ""
-	if *com1 {
+	if com1 {
 		cmdline = cab.COM1
 	} else {
 		cmdline = cab.COM2

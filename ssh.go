@@ -1,44 +1,31 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"os/exec"
 	"os/user"
 	"strings"
 	"syscall"
+
+	"github.com/spf13/cobra"
 )
 
-const SshUsage = `
-Usage: lab ssh [OPTIONS] <ftServer> [command]
+var sshCmd = &cobra.Command{
+	Use:   "ssh <ftServer> [command]",
+	Short: "Exec ssh for an ftServer, when an address is available",
+	Run:   ssh,
+}
 
-Exec ssh for an ftServer, when an address is available
+var sshopt string
 
-Options:
-`
+func init() {
+	sshCmd.Flags().StringVar(&sshopt, "opt", "", "ssh command line options")
+}
 
-func (s *state) ssh(args []string) {
-	flagset := flag.NewFlagSet("ssh", flag.ExitOnError)
+func ssh(cmd *cobra.Command, args []string) {
 
-	flagset.Usage = func() {
-		fmt.Fprintln(os.Stderr, SshUsage)
-		flagset.PrintDefaults()
-	}
-
-	sshopt := flagset.String("ssh", "", "ssh command line options")
-
-	if err := flagset.Parse(args); err != nil {
-		fmt.Fprintln(os.Stderr, "flag parse error:", err)
-		return
-	}
-
-	if flagset.NArg() < 1 {
-		flagset.Usage()
-		return
-	}
-
-	target := strings.Split(flagset.Arg(0), "@")
+	target := strings.Split(args[0], "@")
 
 	u, err := user.Current()
 	if err != nil {
@@ -56,7 +43,7 @@ func (s *state) ssh(args []string) {
 		mach = target[0]
 	}
 
-	addr, err := s.getHost(mach)
+	addr, err := getHost(cmd.Flag("etcd").Value.String(), mach)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "getHost:", err)
 		return
@@ -64,14 +51,14 @@ func (s *state) ssh(args []string) {
 
 	sshargs := make([]string, 0)
 	sshargs = append(sshargs, "ssh")
-	if *sshopt != "" {
-		sshargs = append(sshargs, strings.Fields(*sshopt)...)
+	if sshopt != "" {
+		sshargs = append(sshargs, strings.Fields(sshopt)...)
 	}
 	sshargs = append(sshargs, fmt.Sprintf("%s@%s", user, addr))
 
-	n := flagset.NArg() - 1
+	n := len(args) - 1
 	for i := 1; n > 0; i, n = i+1, n-1 {
-		sshargs = append(sshargs, flagset.Arg(i))
+		sshargs = append(sshargs, args[i])
 	}
 
 	env := os.Environ()

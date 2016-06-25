@@ -1,4 +1,6 @@
 package main
 
-func (s *state) power(args []string) {
+import "github.com/spf13/cobra"
+
+func power(cmd *cobra.Command, args []string) {
 }

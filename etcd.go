@@ -8,10 +8,10 @@ import (
 	"time"
 )
 
-func (s *state) getHost(mach string) (string, error) {
+func getHost(etcd, mach string) (string, error) {
 	client := &http.Client{Timeout: time.Second * 20}
 
-	resp, err := client.Get(s.etcd + "/v2/keys/hosts/" + mach)
+	resp, err := client.Get(etcd + "/v2/keys/hosts/" + mach)
 	if err != nil {
 		return "", fmt.Errorf("etcd connect failed: %v", err)
 	}

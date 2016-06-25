@@ -1,38 +1,32 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
+
+	"github.com/spf13/cobra"
 )
 
-const ListUsage = `
-Usage: lab list [OPTIONS] [machine filter]
+var listCmd = &cobra.Command{
+	Use:     "list [machine filter]",
+	Aliases: []string{"ls"},
+	Short:   "List ftServers",
+	Run:     list,
+}
 
-List ftServers
-`
+var quiet bool
 
-func (s *state) list(args []string) {
-	flagset := flag.NewFlagSet("list", flag.ExitOnError)
+func init() {
+	listCmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "Don't display header")
+}
 
-	flagset.Usage = func() {
-		fmt.Fprintln(os.Stderr, ListUsage)
-		flagset.PrintDefaults()
-	}
-
-	quiet := flagset.Bool("q", false, "Don't display header")
-
-	if err := flagset.Parse(args); err != nil {
-		fmt.Fprintln(os.Stderr, "flag parse error:", err)
-		return
-	}
-
+func list(cmd *cobra.Command, args []string) {
 	filter := ""
-	if flagset.NArg() == 1 {
-		filter = flagset.Arg(0)
+	if len(args) == 1 {
+		filter = args[0]
 	}
 
-	reply, err := s.getData(s.labmap, Machines)
+	reply, err := getData(cmd, "labmap", Machines)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "labmap(machines):", err)
 		return
@@ -42,7 +36,7 @@ func (s *state) list(args []string) {
 
 	fmtstr := "%-8s %-3s %-3s %-4s %-5s %-5s\n"
 
-	if !*quiet {
+	if !quiet {
 		fmt.Printf(fmtstr, "machine", "cab", "pos", "plat", "power", "state")
 	}
 
@@ -51,7 +45,7 @@ func (s *state) list(args []string) {
 			continue
 		}
 
-		reply, err := s.getData(s.labmap, Cabinet+"?machine="+m)
+		reply, err := getData(cmd, "labmap", Cabinet+"?machine="+m)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "labmap(cabinet):", err)
 			return
@@ -62,7 +56,7 @@ func (s *state) list(args []string) {
 		var b []*bmc
 
 		if Glob("lin*", m) {
-			reply, err = s.getData(s.platformid, PlatformID+m)
+			reply, err = getData(cmd, "platformid", PlatformID+m)
 			if err != nil {
 				fmt.Fprintln(os.Stderr, "platformid:", err)
 				return

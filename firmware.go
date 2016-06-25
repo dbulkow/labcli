@@ -1,36 +1,25 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
+
+	"github.com/spf13/cobra"
 )
 
-const FirmwareUsage = `
-Usage: lab firmware [OPTIONS] [machine filter]
+var firmwareCmd = &cobra.Command{
+	Use:   "firmware [machine filter]",
+	Short: "List firmware versions on ftServers",
+	Run:   firmware,
+}
 
-List firmware versions on ftServers
-`
-
-func (s *state) firmware(args []string) {
-	flagset := flag.NewFlagSet("firmware", flag.ExitOnError)
-
-	flagset.Usage = func() {
-		fmt.Fprintln(os.Stderr, FirmwareUsage)
-		flagset.PrintDefaults()
-	}
-
-	if err := flagset.Parse(args); err != nil {
-		fmt.Fprintln(os.Stderr, "flag parse error:", err)
-		return
-	}
-
+func firmware(cmd *cobra.Command, args []string) {
 	filter := ""
-	if flagset.NArg() == 1 {
-		filter = flagset.Arg(0)
+	if len(args) == 1 {
+		filter = args[0]
 	}
 
-	reply, err := s.getData(s.labmap, Machines)
+	reply, err := getData(cmd, "labmap", Machines)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "labmap(machines):", err)
 		return
@@ -50,7 +39,7 @@ func (s *state) firmware(args []string) {
 		var b []*bmc
 
 		if Glob("lin*", m) {
-			reply, err = s.getData(s.platformid, PlatformID+m)
+			reply, err = getData(cmd, "platformid", PlatformID+m)
 			if err != nil {
 				fmt.Fprintln(os.Stderr, "platformid:", err)
 				return
@@ -61,7 +50,7 @@ func (s *state) firmware(args []string) {
 			b = make([]*bmc, 2)
 			b[0] = &bmc{
 				Primary: true,
-				Firmware: firmware{
+				Firmware: versions{
 					Running:    "A",
 					BMCA:       "",
 					BMCB:       "",
@@ -72,7 +61,7 @@ func (s *state) firmware(args []string) {
 			}
 			b[1] = &bmc{
 				Primary: false,
-				Firmware: firmware{
+				Firmware: versions{
 					Running:    "A",
 					BMCA:       "",
 					BMCB:       "",

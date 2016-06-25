@@ -1,9 +1,10 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
+
+	"github.com/spf13/cobra"
 )
 
 const (
@@ -13,86 +14,37 @@ const (
 	PlatformIDurl = "http://yin.mno.stratus.com/"
 )
 
-const Usage = `Usage: lab [OPTIONS] COMMAND [OPTIONS] [arg...]
-       lab [ --help | -v | --version ]
-
-Query lab resources.
-
-Options:
-`
-
-const CmdUsage = `Commands:
-    config   Update/view configuration
-    firmware Query firmware versions
-    kvm      Connect to KVM
-    list     List ftServers
-    power    Control CRU power
-    ssh      Connect to ftServer using ssh
-    telnet   Connect to serial console
-    vtm      Start web page to Primary BMC
-`
-
-type state struct {
-	macmap     string
-	labmap     string
-	etcd       string
-	platformid string
-
-	debug bool
-}
-
 func main() {
-	flag.Usage = func() {
-		fmt.Fprintln(os.Stderr, Usage)
-		flag.PrintDefaults()
-		fmt.Fprintf(os.Stderr, "\n%s\n", CmdUsage)
-	}
-
 	//	ConfFile := UserHomeDir() + "/.config/labcli.conf"
 
 	var (
-		macmap     = flag.String("macmap", MACMap, "URL for macmap")
-		labmap     = flag.String("labmap", LabMap, "URL for labmap")
-		etcd       = flag.String("etcd", Etcd, "URL for etcd")
-		platformid = flag.String("platformid", PlatformIDurl, "URL for platformid")
-		debug      = flag.Bool("debug", false, "Enable communication debugging")
+		macmap     string
+		labmap     string
+		etcd       string
+		platformid string
+
+		verbose bool
 	)
 
-	flag.Parse()
+	rootCmd := &cobra.Command{
+		Use:   "lab",
+		Short: "Query ftServer details",
+	}
 
-	if flag.NArg() < 1 {
-		flag.Usage()
+	rootCmd.PersistentFlags().StringVar(&macmap, "macmap", MACMap, "URL for macmap")
+	rootCmd.PersistentFlags().StringVar(&labmap, "labmap", LabMap, "URL for labmap")
+	rootCmd.PersistentFlags().StringVar(&etcd, "etcd", Etcd, "URL for etcd")
+	rootCmd.PersistentFlags().StringVar(&platformid, "platformid", PlatformIDurl, "URL for platformid")
+	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable communication debugging")
+
+	rootCmd.AddCommand(listCmd)
+	rootCmd.AddCommand(telnetCmd)
+	rootCmd.AddCommand(sshCmd)
+	rootCmd.AddCommand(vtmCmd)
+	rootCmd.AddCommand(firmwareCmd)
+
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
 		return
 	}
-
-	args := flag.Args()
-
-	s := &state{
-		macmap:     *macmap,
-		labmap:     *labmap,
-		etcd:       *etcd,
-		platformid: *platformid,
-		debug:      *debug,
-	}
-
-	subcmds := map[string]func([]string){
-		"cfg":      s.config,
-		"config":   s.config,
-		"firmware": s.firmware,
-		"kvm":      s.kvm,
-		"ls":       s.list,
-		"list":     s.list,
-		"power":    s.power,
-		"ssh":      s.ssh,
-		"telnet":   s.telnet,
-		"vtm":      s.vtm,
-	}
-
-	cmd, ok := subcmds[args[0]]
-	if !ok {
-		flag.Usage()
-		return
-	}
-
-	cmd(args[1:])
 }

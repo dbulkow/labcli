@@ -1,46 +1,37 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"os/exec"
 	"syscall"
+
+	"github.com/spf13/cobra"
 )
 
 const XDGOpen = "xdg-open"
 
-const VTMUsage = `
-Usage:  lab vtm [OPTIONS] <machine>
+var vtmCmd = &cobra.Command{
+	Use:   "vtm <machine>",
+	Short: "Start browser window to BMC VTM",
+	Run:   vtm,
+}
 
-Start browser window to BMC VTM
+var secondary bool
 
-Options:
-`
+func init() {
+	vtmCmd.Flags().BoolVar(&secondary, "secondary", false, "Connect to secondar BMC")
+}
 
-func (s *state) vtm(args []string) {
-	flagset := flag.NewFlagSet("vtm", flag.ExitOnError)
-
-	flagset.Usage = func() {
-		fmt.Fprintln(os.Stderr, VTMUsage)
-		flagset.PrintDefaults()
-	}
-
-	secondary := flagset.Bool("secondary", false, "Connect to secondar BMC")
-
-	if err := flagset.Parse(args); err != nil {
-		fmt.Fprintln(os.Stderr, "flag parse error:", err)
+func vtm(cmd *cobra.Command, args []string) {
+	if len(args) < 1 {
+		cmd.Usage()
 		return
 	}
 
-	if flagset.NArg() < 1 {
-		flagset.Usage()
-		return
-	}
+	mach := args[0]
 
-	mach := flagset.Arg(0)
-
-	reply, err := s.getData(s.labmap, Cabinet)
+	reply, err := getData(cmd, "labmap", Cabinet)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "labmap(cabinet):", err)
 		return
@@ -49,13 +40,13 @@ func (s *state) vtm(args []string) {
 	cab := reply.Cabinets
 
 	vtm := ""
-	if *secondary {
+	if secondary {
 		vtm = cab[mach].VTM1
 	} else {
 		vtm = cab[mach].VTM0
 	}
 
-	addr, err := s.getAddr(vtm)
+	addr, err := getAddr(cmd, vtm)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "macmap(address):", err)
 		return
