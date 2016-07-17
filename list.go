@@ -34,7 +34,7 @@ func list(cmd *cobra.Command, args []string) {
 
 	machines := reply.Machines
 
-	fmtstr := "%-8s %-3s %-3s %-4s %-5s %-5s\n"
+	fmtstr := "%-8s %-3s %-3s %-4s %-5s %-10s\n"
 
 	if !quiet {
 		fmt.Printf(fmtstr, "machine", "cab", "pos", "plat", "power", "state")
