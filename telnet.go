@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
 	"strings"
 	"syscall"
 	"time"
@@ -20,10 +21,14 @@ var telnetCmd = &cobra.Command{
 	Run:   telnet,
 }
 
-var com1 bool
+var (
+	com1  bool
+	retry bool
+)
 
 func init() {
 	telnetCmd.Flags().BoolVarP(&com1, "com1", "1", false, "Use COM1")
+	telnetCmd.Flags().BoolVarP(&retry, "retry", "r", false, "Retry connection with telnet server")
 }
 
 func telnet(cmd *cobra.Command, args []string) {
@@ -77,6 +82,8 @@ func telnet(cmd *cobra.Command, args []string) {
 		return
 	}
 
+	// XXX replace middle argument (machine name) with IP
+
 	telargs := strings.Fields(cmdline)
 	env := os.Environ()
 
@@ -85,10 +92,39 @@ func telnet(cmd *cobra.Command, args []string) {
 		fmt.Fprintln(os.Stderr, "Telnet command not found in PATH")
 		return
 	}
+again:
+	cmnd := exec.Command(telnet, telargs[1:]...)
+	cmnd.Stderr = os.Stderr
+	cmnd.Stdout = os.Stdout
+	cmnd.Stdin = os.Stdin
+	cmnd.Env = env
 
-	err = syscall.Exec(telnet, telargs, env)
+	fmt.Println(cmnd.Args)
+
+	sigs := make(chan os.Signal, 1)
+
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM, syscall.SIGCHLD)
+
+	go func() {
+		for {
+			sig := <-sigs
+			fmt.Println(sig)
+		}
+	}()
+
+	err = cmnd.Run()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Error running telnet:", err)
-		return
+		e, ok := err.(*exec.ExitError)
+		if !ok {
+			fmt.Fprintln(os.Stderr, "run failed:", err)
+			return
+		}
+		wstat := e.Sys().(syscall.WaitStatus)
+		fmt.Printf("telnet exit status: %d\n", wstat.ExitStatus())
+
+		if retry {
+			time.Sleep(time.Second * 5)
+			goto again
+		}
 	}
 }
