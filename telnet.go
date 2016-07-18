@@ -33,7 +33,7 @@ func init() {
 
 func telnet(cmd *cobra.Command, args []string) {
 	if len(args) < 1 {
-		cmd.Usage()
+		cmd.UsageFunc()(cmd)
 		return
 	}
 
