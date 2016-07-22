@@ -108,6 +108,10 @@ again:
 		for {
 			sig := <-sigs
 			fmt.Println(sig)
+			if sig.String() == "interrupt" {
+				fmt.Println("leaving")
+				os.Exit(1)
+			}
 		}
 	}()
 
