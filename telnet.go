@@ -91,14 +91,6 @@ func telnet(cmd *cobra.Command, args []string) {
 		fmt.Fprintln(os.Stderr, "Telnet command not found in PATH")
 		return
 	}
-again:
-	cmnd := exec.Command(telnet, telargs[1:]...)
-	cmnd.Stderr = os.Stderr
-	cmnd.Stdout = os.Stdout
-	cmnd.Stdin = os.Stdin
-	cmnd.Env = env
-
-	fmt.Println(cmnd.Args)
 
 	sigs := make(chan os.Signal, 1)
 
@@ -114,6 +106,14 @@ again:
 			}
 		}
 	}()
+again:
+	cmnd := exec.Command(telnet, telargs[1:]...)
+	cmnd.Stderr = os.Stderr
+	cmnd.Stdout = os.Stdout
+	cmnd.Stdin = os.Stdin
+	cmnd.Env = env
+
+	fmt.Println(cmnd.Args)
 
 	err = cmnd.Run()
 	if err != nil {
