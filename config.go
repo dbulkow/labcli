@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -41,7 +42,12 @@ type Config struct {
 	KVM      int     `json:"kvm"`
 }
 
-var config = &Config{}
+var (
+	config  = &Config{}
+	sortCab bool
+	sortPos bool
+	sortKvm bool
+)
 
 func init() {
 	configCmd := &cobra.Command{
@@ -98,6 +104,10 @@ func init() {
 	setCmd.Flags().IntVar(&config.COM2.StopBits, "com2-stop", 1, "set COM2 port stopbits")
 	setCmd.Flags().StringVar(&config.COM2.Parity, "com2-parity", "N", "set COM2 port parity [\"N\", \"E\", \"O\"]")
 	setCmd.Flags().StringVar(&config.COM2.Device, "com2-device", "", "set COM2 port device on server")
+
+	listCmd.Flags().BoolVarP(&sortCab, "cab", "c", false, "sort by cabinet")
+	listCmd.Flags().BoolVarP(&sortPos, "pos", "p", false, "sort by position")
+	listCmd.Flags().BoolVarP(&sortKvm, "kvm", "k", false, "sort by kvm")
 
 	configCmd.AddCommand(listCmd)
 	configCmd.AddCommand(setCmd)
@@ -230,6 +240,47 @@ func configSet(cmd *cobra.Command, args []string) {
 
 }
 
+type byMachine []*Config
+
+func (b byMachine) Len() int      { return len(b) }
+func (b byMachine) Swap(i, j int) { b[i], b[j] = b[j], b[i] }
+func (b byMachine) Less(i, j int) bool {
+	if strings.HasPrefix(b[i].Name, "lin") && !strings.HasPrefix(b[j].Name, "lin") {
+		return true
+	}
+	if !strings.HasPrefix(b[i].Name, "lin") && strings.HasPrefix(b[j].Name, "lin") {
+		return false
+	}
+	if strings.HasPrefix(b[i].Name, "lin") && strings.HasPrefix(b[j].Name, "lin") {
+		if b[i].Name[3] > b[j].Name[3] {
+			return true
+		}
+		if b[i].Name[3] < b[j].Name[3] {
+			return false
+		}
+		return strings.Compare(b[i].Name, b[j].Name) < 0
+	}
+	return strings.Compare(b[i].Name, b[j].Name) < 0
+}
+
+type byCab []*Config
+
+func (b byCab) Len() int           { return len(b) }
+func (b byCab) Swap(i, j int)      { b[i], b[j] = b[j], b[i] }
+func (b byCab) Less(i, j int) bool { return b[i].Cabinet < b[j].Cabinet }
+
+type byPos []*Config
+
+func (b byPos) Len() int           { return len(b) }
+func (b byPos) Swap(i, j int)      { b[i], b[j] = b[j], b[i] }
+func (b byPos) Less(i, j int) bool { return b[i].Position < b[j].Position }
+
+type byKvm []*Config
+
+func (b byKvm) Len() int           { return len(b) }
+func (b byKvm) Swap(i, j int)      { b[i], b[j] = b[j], b[i] }
+func (b byKvm) Less(i, j int) bool { return b[i].KVM < b[j].KVM }
+
 func configList(cmd *cobra.Command, args []string) {
 	filter := ""
 	if len(args) == 1 {
@@ -250,22 +301,39 @@ func configList(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	cfg := &Config{}
+	configs := make([]*Config, 0)
 
-	header := "%-8s %-4s %-4s %-4s %-4s %-25s %-25s\n"
-	format := "%-8s %-4d %-4d %-4d %-4d %-25s %-25s\n"
-	fmt.Printf(header, "machine", "cab", "pos", "pdu", "kvm", "com1", "com2")
 	for _, p := range pairs {
+		cfg := &Config{}
+
 		if err := json.Unmarshal(p.Value, cfg); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			continue
 		}
 
-		if filter != "" && !Glob(filter, cfg.Name) {
+		configs = append(configs, cfg)
+	}
+
+	sort.Sort(byMachine(configs))
+
+	switch {
+	case sortCab:
+		sort.Sort(byCab(configs))
+	case sortPos:
+		sort.Sort(byPos(configs))
+	case sortKvm:
+		sort.Sort(byKvm(configs))
+	}
+
+	header := "%-8s %-4s %-4s %-4s %-4s %-25s %-25s\n"
+	format := "%-8s %-4d %-4d %-4d %-4d %-25s %-25s\n"
+	fmt.Printf(header, "machine", "cab", "pos", "pdu", "kvm", "com1", "com2")
+	for _, c := range configs {
+		if filter != "" && !Glob(filter, c.Name) {
 			continue
 		}
 
-		fmt.Printf(format, cfg.Name, cfg.Cabinet, cfg.Position, cfg.PDU, cfg.KVM, &cfg.COM1, &cfg.COM2)
+		fmt.Printf(format, c.Name, c.Cabinet, c.Position, c.PDU, c.KVM, &c.COM1, &c.COM2)
 	}
 }
 
