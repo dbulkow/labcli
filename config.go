@@ -181,18 +181,38 @@ func configSet(cmd *cobra.Command, args []string) {
 	}
 	if cmd.Flag("com1-enabled").Changed {
 		cfg.COM1.Enabled = config.COM1.Enabled
+	}
+	if cmd.Flag("com1-speed").Changed {
 		cfg.COM1.Speed = config.COM1.Speed
+	}
+	if cmd.Flag("com1-bits").Changed {
 		cfg.COM1.Bits = config.COM1.Bits
+	}
+	if cmd.Flag("com1-stop").Changed {
 		cfg.COM1.StopBits = config.COM1.StopBits
+	}
+	if cmd.Flag("com1-parity").Changed {
 		cfg.COM1.Parity = config.COM1.Parity
+	}
+	if cmd.Flag("com1-device").Changed {
 		cfg.COM1.Device = config.COM1.Device
 	}
 	if cmd.Flag("com2-enabled").Changed {
 		cfg.COM2.Enabled = config.COM2.Enabled
+	}
+	if cmd.Flag("com2-speed").Changed {
 		cfg.COM2.Speed = config.COM2.Speed
+	}
+	if cmd.Flag("com2-bits").Changed {
 		cfg.COM2.Bits = config.COM2.Bits
+	}
+	if cmd.Flag("com2-stop").Changed {
 		cfg.COM2.StopBits = config.COM2.StopBits
+	}
+	if cmd.Flag("com2-parity").Changed {
 		cfg.COM2.Parity = config.COM2.Parity
+	}
+	if cmd.Flag("com2-device").Changed {
 		cfg.COM2.Device = config.COM2.Device
 	}
 
