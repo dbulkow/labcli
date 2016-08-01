@@ -60,11 +60,23 @@ func list(cmd *cobra.Command, args []string) {
 		if Glob("lin*", m) {
 			reply, err = getData(cmd, "platformid", PlatformID+m)
 			if err != nil {
-				fmt.Fprintln(os.Stderr, "platformid:", err)
-				return
+				b = []*bmc{
+					{
+						Primary:  true,
+						Platform: "",
+						PowerOn:  true,
+						State:    "",
+					},
+					{
+						Primary:  false,
+						Platform: "",
+						PowerOn:  true,
+						State:    "",
+					},
+				}
+			} else {
+				b = reply.BMC
 			}
-
-			b = reply.BMC
 		} else {
 			b = make([]*bmc, 2)
 			b[0] = &bmc{
