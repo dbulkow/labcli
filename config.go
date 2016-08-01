@@ -13,7 +13,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const LabConfig = "labconfig/"
+const LabConfig = "labconfig"
 
 type ComPort struct {
 	Enabled  bool   `json:"enabled"`
@@ -134,7 +134,7 @@ func configDel(cmd *cobra.Command, args []string) {
 
 	kv := client.KV()
 
-	key := LabConfig + hostname
+	key := LabConfig + "/" + hostname
 
 	if _, err := kv.Delete(key, nil); err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -158,7 +158,7 @@ func configSet(cmd *cobra.Command, args []string) {
 
 	kv := client.KV()
 
-	key := LabConfig + hostname
+	key := LabConfig + "/" + hostname
 
 	pair, _, err := kv.Get(key, nil)
 	if err != nil {
@@ -295,7 +295,7 @@ func configList(cmd *cobra.Command, args []string) {
 
 	kv := client.KV()
 
-	pairs, _, err := kv.List("labconfig", nil)
+	pairs, _, err := kv.List(LabConfig, nil)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -351,7 +351,7 @@ func configSave(cmd *cobra.Command, args []string) {
 
 	kv := client.KV()
 
-	pairs, _, err := kv.List("labconfig", nil)
+	pairs, _, err := kv.List(LabConfig, nil)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -473,7 +473,7 @@ func configRestore(cmd *cobra.Command, args []string) {
 			os.Exit(1)
 		}
 
-		key := LabConfig + cfg.Name
+		key := LabConfig + "/" + cfg.Name
 
 		_, err = kv.Put(&consul.KVPair{Key: key, Value: b}, nil)
 		if err != nil {
