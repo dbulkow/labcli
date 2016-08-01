@@ -7,17 +7,19 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var listCmd = &cobra.Command{
-	Use:     "list [machine filter]",
-	Aliases: []string{"ls"},
-	Short:   "List ftServers",
-	Run:     list,
-}
-
 var quiet bool
 
 func init() {
+	listCmd := &cobra.Command{
+		Use:     "list [machine filter]",
+		Aliases: []string{"ls"},
+		Short:   "List ftServers",
+		Run:     list,
+	}
+
 	listCmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "Don't display header")
+
+	RootCmd.AddCommand(listCmd)
 }
 
 func list(cmd *cobra.Command, args []string) {

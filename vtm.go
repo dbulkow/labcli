@@ -11,16 +11,18 @@ import (
 
 const XDGOpen = "xdg-open"
 
-var vtmCmd = &cobra.Command{
-	Use:   "vtm <machine>",
-	Short: "Start browser window to BMC VTM",
-	Run:   vtm,
-}
-
 var secondary bool
 
 func init() {
+	vtmCmd := &cobra.Command{
+		Use:   "vtm <machine>",
+		Short: "Start browser window to BMC VTM",
+		Run:   vtm,
+	}
+
 	vtmCmd.Flags().BoolVar(&secondary, "secondary", false, "Connect to secondar BMC")
+
+	RootCmd.AddCommand(vtmCmd)
 }
 
 func vtm(cmd *cobra.Command, args []string) {

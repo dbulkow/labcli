@@ -11,20 +11,21 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var sshCmd = &cobra.Command{
-	Use:   "ssh <ftServer> [command]",
-	Short: "Exec ssh for an ftServer, when an address is available",
-	Run:   ssh,
-}
-
 var sshopt string
 
 func init() {
+	sshCmd := &cobra.Command{
+		Use:   "ssh <ftServer> [command]",
+		Short: "Exec ssh for an ftServer, when an address is available",
+		Run:   ssh,
+	}
+
 	sshCmd.Flags().StringVar(&sshopt, "opt", "", "ssh command line options")
+
+	RootCmd.AddCommand(sshCmd)
 }
 
 func ssh(cmd *cobra.Command, args []string) {
-
 	target := strings.Split(args[0], "@")
 
 	u, err := user.Current()

@@ -14,20 +14,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var telnetCmd = &cobra.Command{
-	Use:   "telnet <ftServer>",
-	Short: "Exec telnet for an ftServer",
-	Run:   telnet,
-}
-
 var (
 	com1  bool
 	retry bool
 )
 
 func init() {
+	telnetCmd := &cobra.Command{
+		Use:   "telnet <ftServer>",
+		Short: "Exec telnet for an ftServer",
+		Run:   telnet,
+	}
+
 	telnetCmd.Flags().BoolVarP(&com1, "com1", "1", false, "Use COM1")
 	telnetCmd.Flags().BoolVarP(&retry, "retry", "r", false, "Retry connection with telnet server")
+
+	RootCmd.AddCommand(telnetCmd)
 }
 
 func telnet(cmd *cobra.Command, args []string) {

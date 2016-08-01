@@ -14,36 +14,30 @@ const (
 	PlatformIDurl = "http://yin.mno.stratus.com/"
 )
 
+var RootCmd = &cobra.Command{
+	Use:   "lab",
+	Short: "Interact with ftLinux lab environment",
+}
+
+var (
+	macmap     string
+	labmap     string
+	etcd       string
+	platformid string
+	kvstore    string
+
+	verbose bool
+)
+
 func main() {
-	//	ConfFile := UserHomeDir() + "/.config/labcli.conf"
+	RootCmd.PersistentFlags().StringVar(&macmap, "macmap", MACMap, "URL for macmap")
+	RootCmd.PersistentFlags().StringVar(&labmap, "labmap", LabMap, "URL for labmap")
+	RootCmd.PersistentFlags().StringVar(&etcd, "etcd", Etcd, "URL for etcd")
+	RootCmd.PersistentFlags().StringVar(&platformid, "platformid", PlatformIDurl, "URL for platformid")
+	RootCmd.PersistentFlags().StringVar(&kvstore, "kv", "consul", "Select key-value store from [etcd, consul]")
+	RootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable communication debugging")
 
-	var (
-		macmap     string
-		labmap     string
-		etcd       string
-		platformid string
-
-		verbose bool
-	)
-
-	rootCmd := &cobra.Command{
-		Use:   "lab",
-		Short: "Query ftServer details",
-	}
-
-	rootCmd.PersistentFlags().StringVar(&macmap, "macmap", MACMap, "URL for macmap")
-	rootCmd.PersistentFlags().StringVar(&labmap, "labmap", LabMap, "URL for labmap")
-	rootCmd.PersistentFlags().StringVar(&etcd, "etcd", Etcd, "URL for etcd")
-	rootCmd.PersistentFlags().StringVar(&platformid, "platformid", PlatformIDurl, "URL for platformid")
-	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable communication debugging")
-
-	rootCmd.AddCommand(listCmd)
-	rootCmd.AddCommand(telnetCmd)
-	rootCmd.AddCommand(sshCmd)
-	rootCmd.AddCommand(vtmCmd)
-	rootCmd.AddCommand(firmwareCmd)
-
-	if err := rootCmd.Execute(); err != nil {
+	if err := RootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return
 	}

@@ -7,10 +7,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var firmwareCmd = &cobra.Command{
-	Use:   "firmware [machine filter]",
-	Short: "List firmware versions on ftServers",
-	Run:   firmware,
+func init() {
+	firmwareCmd := &cobra.Command{
+		Use:   "firmware [machine filter]",
+		Short: "List firmware versions on ftServers",
+		Run:   firmware,
+	}
+
+	RootCmd.AddCommand(firmwareCmd)
 }
 
 func firmware(cmd *cobra.Command, args []string) {
