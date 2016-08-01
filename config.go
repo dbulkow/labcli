@@ -364,15 +364,23 @@ func configSave(cmd *cobra.Command, args []string) {
 	}
 	defer file.Close()
 
-	cfg := &Config{}
+	configs := make([]*Config, 0)
 
 	for _, p := range pairs {
+		cfg := &Config{}
+
 		if err := json.Unmarshal(p.Value, cfg); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
 
-		fmt.Fprintf(file, "%-8s lnx%d pos%d com1-%-25s com2-%-25s pdu%d kvm%d\n", cfg.Name, cfg.Cabinet, cfg.Position, &cfg.COM1, &cfg.COM2, cfg.PDU, cfg.KVM)
+		configs = append(configs, cfg)
+	}
+
+	sort.Sort(byMachine(configs))
+
+	for _, c := range configs {
+		fmt.Fprintf(file, "%-8s lnx%d pos%d com1-%-25s com2-%-25s pdu%d kvm%d\n", c.Name, c.Cabinet, c.Position, &c.COM1, &c.COM2, c.PDU, c.KVM)
 	}
 }
 
