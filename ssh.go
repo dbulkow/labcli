@@ -26,6 +26,11 @@ func init() {
 }
 
 func ssh(cmd *cobra.Command, args []string) {
+	if len(args) < 1 {
+		cmd.UsageFunc()(cmd)
+		return
+	}
+
 	target := strings.Split(args[0], "@")
 
 	u, err := user.Current()

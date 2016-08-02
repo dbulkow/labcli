@@ -120,7 +120,7 @@ func init() {
 
 func configDel(cmd *cobra.Command, args []string) {
 	if len(args) < 1 {
-		cmd.Usage()
+		cmd.UsageFunc()(cmd)
 		os.Exit(1)
 	}
 
@@ -144,7 +144,7 @@ func configDel(cmd *cobra.Command, args []string) {
 
 func configSet(cmd *cobra.Command, args []string) {
 	if len(args) < 1 {
-		cmd.Usage()
+		cmd.UsageFunc()(cmd)
 		os.Exit(1)
 	}
 
