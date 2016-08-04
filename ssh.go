@@ -49,7 +49,7 @@ func ssh(cmd *cobra.Command, args []string) {
 		mach = target[0]
 	}
 
-	addr, err := getHost(cmd.Flag("etcd").Value.String(), mach)
+	addr, err := getHost(cmd, mach)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "getHost:", err)
 		return

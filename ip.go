@@ -25,7 +25,7 @@ func ip(cmd *cobra.Command, args []string) {
 
 	ftserver := args[0]
 
-	addr, err := getHost(cmd.Flag("etcd").Value.String(), ftserver)
+	addr, err := getHost(cmd, ftserver)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "getHost:", err)
 		return

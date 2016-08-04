@@ -10,7 +10,7 @@ import (
 const (
 	MACMap        = "http://yin.mno.stratus.com/"
 	LabMap        = "http://yin.mno.stratus.com/"
-	Etcd          = "http://yin.mno.stratus.com:2379/"
+	Hosts         = "http://yin.mno.stratus.com/"
 	PlatformIDurl = "http://yin.mno.stratus.com/"
 )
 
@@ -22,9 +22,8 @@ var RootCmd = &cobra.Command{
 var (
 	macmap     string
 	labmap     string
-	etcd       string
+	hosts      string
 	platformid string
-	kvstore    string
 
 	verbose bool
 )
@@ -32,9 +31,8 @@ var (
 func main() {
 	RootCmd.PersistentFlags().StringVar(&macmap, "macmap", MACMap, "URL for macmap")
 	RootCmd.PersistentFlags().StringVar(&labmap, "labmap", LabMap, "URL for labmap")
-	RootCmd.PersistentFlags().StringVar(&etcd, "etcd", Etcd, "URL for etcd")
+	RootCmd.PersistentFlags().StringVar(&hosts, "hosts", Hosts, "URL for host lookup")
 	RootCmd.PersistentFlags().StringVar(&platformid, "platformid", PlatformIDurl, "URL for platformid")
-	RootCmd.PersistentFlags().StringVar(&kvstore, "kv", "consul", "Select key-value store from [etcd, consul]")
 	RootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable communication debugging")
 
 	if err := RootCmd.Execute(); err != nil {
