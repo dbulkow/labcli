@@ -7,6 +7,9 @@ import (
 	"syscall"
 
 	"github.com/spf13/cobra"
+
+	labapi "yin.mno.stratus.com/gogs/dbulkow/labmap/api"
+	macapi "yin.mno.stratus.com/gogs/dbulkow/macmap/api"
 )
 
 const XDGOpen = "xdg-open"
@@ -33,24 +36,29 @@ func vtm(cmd *cobra.Command, args []string) {
 
 	mach := args[0]
 
-	reply, err := getData(cmd, "labmap", Cabinet)
+	cab, err := labapi.Cabinets(labmap)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "labmap(cabinet):", err)
 		return
 	}
 
-	cab := reply.Cabinets
-
 	vtm := ""
-	if secondary {
-		vtm = cab[mach].VTM1
-	} else {
-		vtm = cab[mach].VTM0
+	if c, ok := cab[mach]; ok {
+		if secondary {
+			vtm = c.VTM1
+		} else {
+			vtm = c.VTM0
+		}
 	}
 
-	addr, err := getAddr(cmd, vtm)
+	addr, err := macapi.GetAddress(macmap, vtm)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "macmap(address):", err)
+		return
+	}
+
+	if addr == nil {
+		fmt.Fprintf(os.Stderr, "address[%s] not found\n", vtm)
 		return
 	}
 
@@ -64,7 +72,7 @@ func vtm(cmd *cobra.Command, args []string) {
 
 	xdgargs := make([]string, 0)
 	xdgargs = append(xdgargs, XDGOpen)
-	xdgargs = append(xdgargs, "http://"+addr)
+	xdgargs = append(xdgargs, "http://"+addr.IP)
 
 	err = syscall.Exec(xdg, xdgargs, env)
 	if err != nil {

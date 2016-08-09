@@ -5,6 +5,9 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+
+	labapi "yin.mno.stratus.com/gogs/dbulkow/labmap/api"
+	pid "yin.mno.stratus.com/gogs/dbulkow/platformid/api"
 )
 
 var quiet bool
@@ -28,13 +31,11 @@ func list(cmd *cobra.Command, args []string) {
 		filter = args[0]
 	}
 
-	reply, err := getData(cmd, "labmap", Machines)
+	machines, err := labapi.Machines(labmap)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "labmap(machines):", err)
 		return
 	}
-
-	machines := reply.Machines
 
 	fmtstr := "%-8s %-3s %-3s %-4s %-5s %-10s\n"
 
@@ -47,20 +48,18 @@ func list(cmd *cobra.Command, args []string) {
 			continue
 		}
 
-		reply, err := getData(cmd, "labmap", Cabinet+"?machine="+m)
+		cab, err := labapi.GetCabinet(labmap, m)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "labmap(cabinet):", err)
 			return
 		}
 
-		cab := reply.Cabinets[m]
-
-		var b []*bmc
+		var b []*pid.BMC
 
 		if Glob("lin*", m) {
-			reply, err = getData(cmd, "platformid", PlatformID+m)
+			p, err := pid.PlatformID(platformid, m)
 			if err != nil {
-				b = []*bmc{
+				b = []*pid.BMC{
 					{
 						Primary:  true,
 						Platform: "",
@@ -75,17 +74,17 @@ func list(cmd *cobra.Command, args []string) {
 					},
 				}
 			} else {
-				b = reply.BMC
+				b = p.Bmc
 			}
 		} else {
-			b = make([]*bmc, 2)
-			b[0] = &bmc{
+			b = make([]*pid.BMC, 2)
+			b[0] = &pid.BMC{
 				Primary:  true,
 				Platform: "",
 				PowerOn:  true,
 				State:    "",
 			}
-			b[1] = &bmc{
+			b[1] = &pid.BMC{
 				Primary:  false,
 				Platform: "",
 				PowerOn:  true,

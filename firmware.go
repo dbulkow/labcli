@@ -5,6 +5,9 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+
+	labapi "yin.mno.stratus.com/gogs/dbulkow/labmap/api"
+	pid "yin.mno.stratus.com/gogs/dbulkow/platformid/api"
 )
 
 func init() {
@@ -23,13 +26,11 @@ func firmware(cmd *cobra.Command, args []string) {
 		filter = args[0]
 	}
 
-	reply, err := getData(cmd, "labmap", Machines)
+	machines, err := labapi.Machines(labmap)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "labmap(machines):", err)
 		return
 	}
-
-	machines := reply.Machines
 
 	fmtstr := "%-8s %-5s %-5s %-5s %-5s\n"
 
@@ -40,21 +41,21 @@ func firmware(cmd *cobra.Command, args []string) {
 			continue
 		}
 
-		var b []*bmc
+		var b []*pid.BMC
 
 		if Glob("lin*", m) {
-			reply, err = getData(cmd, "platformid", PlatformID+m)
+			p, err := pid.PlatformID(platformid, m)
 			if err != nil {
 				fmt.Fprintln(os.Stderr, "platformid:", err)
 				return
 			}
 
-			b = reply.BMC
+			b = p.Bmc
 		} else {
-			b = make([]*bmc, 2)
-			b[0] = &bmc{
+			b = make([]*pid.BMC, 2)
+			b[0] = &pid.BMC{
 				Primary: true,
-				Firmware: versions{
+				Firmware: pid.Firmware{
 					Running:    "A",
 					BMCA:       "",
 					BMCB:       "",
@@ -63,9 +64,9 @@ func firmware(cmd *cobra.Command, args []string) {
 					BIOS:       "",
 				},
 			}
-			b[1] = &bmc{
+			b[1] = &pid.BMC{
 				Primary: false,
-				Firmware: versions{
+				Firmware: pid.Firmware{
 					Running:    "A",
 					BMCA:       "",
 					BMCB:       "",

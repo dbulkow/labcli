@@ -1,10 +1,7 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"os"
 	"os/exec"
 	"strings"
@@ -12,6 +9,8 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+
+	labapi "yin.mno.stratus.com/gogs/dbulkow/labmap/api"
 )
 
 var (
@@ -38,38 +37,13 @@ func telnet(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	mach := args[0]
+	machine := args[0]
 
-	client := &http.Client{Timeout: time.Second * 20}
-
-	labmap := cmd.Flag("labmap").Value.String()
-
-	resp, err := client.Get(labmap + "/v1/cabinet/?machine=" + mach)
+	cab, err := labapi.GetCabinet(labmap, machine)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "connection to labmap failed:", err)
 		return
 	}
-	defer resp.Body.Close()
-
-	b, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "read from labmap failed:", err)
-		return
-	}
-
-	reply := &Reply{}
-
-	if err := json.Unmarshal(b, reply); err != nil {
-		fmt.Fprintln(os.Stderr, "unmarshal labmap:", err)
-		return
-	}
-
-	if reply.Status == "Failed" {
-		fmt.Fprintln(os.Stderr, "labmap cabinet request failed:", reply.Error)
-		return
-	}
-
-	cab := reply.Cabinets[mach]
 
 	cmdline := ""
 	if com1 {
