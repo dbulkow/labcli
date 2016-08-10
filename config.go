@@ -43,10 +43,7 @@ type Config struct {
 }
 
 var (
-	config  = &Config{}
-	sortCab bool
-	sortPos bool
-	sortKvm bool
+	config = &Config{}
 )
 
 func init() {
@@ -105,9 +102,7 @@ func init() {
 	setCmd.Flags().StringVar(&config.COM2.Parity, "com2-parity", "N", "set COM2 port parity [\"N\", \"E\", \"O\"]")
 	setCmd.Flags().StringVar(&config.COM2.Device, "com2-device", "", "set COM2 port device on server")
 
-	listCmd.Flags().BoolVarP(&sortCab, "cab", "c", false, "sort by cabinet")
-	listCmd.Flags().BoolVarP(&sortPos, "pos", "p", false, "sort by position")
-	listCmd.Flags().BoolVarP(&sortKvm, "kvm", "k", false, "sort by kvm")
+	listCmd.Flags().StringVar(&sortby, "sort-by", "", "Sort by [cabinet, position, kvm]")
 
 	configCmd.AddCommand(listCmd)
 	configCmd.AddCommand(setCmd)
@@ -316,12 +311,12 @@ func configList(cmd *cobra.Command, args []string) {
 
 	sort.Sort(byMachine(configs))
 
-	switch {
-	case sortCab:
+	switch sortby {
+	case "cabinet":
 		sort.Sort(byCab(configs))
-	case sortPos:
+	case "position":
 		sort.Sort(byPos(configs))
-	case sortKvm:
+	case "kvm":
 		sort.Sort(byKvm(configs))
 	}
 
