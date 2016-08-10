@@ -8,10 +8,11 @@ import (
 )
 
 const (
-	MACMap        = "http://yin.mno.stratus.com/"
-	LabMap        = "http://yin.mno.stratus.com/"
-	Hosts         = "http://yin.mno.stratus.com/"
-	PlatformIDurl = "http://yin.mno.stratus.com/"
+	BaseURL       = "http://yin.mno.stratus.com"
+	MACMap        = BaseURL
+	LabMap        = BaseURL
+	Hosts         = BaseURL
+	PlatformIDurl = BaseURL
 )
 
 var RootCmd = &cobra.Command{
