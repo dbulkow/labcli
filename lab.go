@@ -36,6 +36,11 @@ func main() {
 	RootCmd.PersistentFlags().StringVar(&platformid, "platformid", PlatformIDurl, "URL for platformid")
 	RootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable communication debugging")
 
+	RootCmd.PersistentFlags().MarkHidden("macmap")
+	RootCmd.PersistentFlags().MarkHidden("labmap")
+	RootCmd.PersistentFlags().MarkHidden("hosts")
+	RootCmd.PersistentFlags().MarkHidden("platformid")
+
 	if err := RootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return
