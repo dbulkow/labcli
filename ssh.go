@@ -17,7 +17,7 @@ func init() {
 	sshCmd := &cobra.Command{
 		Use:   "ssh <ftServer> [command]",
 		Short: "Exec ssh for an ftServer, when an address is available",
-		Run:   ssh,
+		Run:   sshcmd,
 	}
 
 	sshCmd.Flags().StringVar(&sshopt, "opt", "", "ssh command line options")
@@ -25,7 +25,7 @@ func init() {
 	RootCmd.AddCommand(sshCmd)
 }
 
-func ssh(cmd *cobra.Command, args []string) {
+func sshcmd(cmd *cobra.Command, args []string) {
 	if len(args) < 1 {
 		cmd.UsageFunc()(cmd)
 		return
