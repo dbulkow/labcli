@@ -12,7 +12,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const MacMap = "macaddrs/"
+const MacAddrs = "macaddrs/"
 
 var (
 	keystore kv.KV
@@ -79,7 +79,7 @@ func macaddrDel(cmd *cobra.Command, args []string) {
 
 	macaddr := args[0]
 
-	if err := keystore.Del(MacMap + macaddr); err != nil {
+	if err := keystore.Del(MacAddrs + macaddr); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
@@ -94,23 +94,23 @@ func macaddrSet(cmd *cobra.Command, args []string) {
 	macaddr := args[0]
 	hostname := args[1]
 
-	if err := keystore.Set(MacMap+macaddr, hostname); err != nil {
+	if err := keystore.Set(MacAddrs+macaddr, hostname); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return
 	}
 }
 
-type byMac []*kv.KVPair
+type byKey []*kv.KVPair
 
-func (b byMac) Len() int           { return len(b) }
-func (b byMac) Swap(i, j int)      { b[i], b[j] = b[j], b[i] }
-func (b byMac) Less(i, j int) bool { return strings.Compare(b[i].Key, b[j].Key) < 0 }
+func (b byKey) Len() int           { return len(b) }
+func (b byKey) Swap(i, j int)      { b[i], b[j] = b[j], b[i] }
+func (b byKey) Less(i, j int) bool { return strings.Compare(b[i].Key, b[j].Key) < 0 }
 
-type byHostname []*kv.KVPair
+type byVal []*kv.KVPair
 
-func (b byHostname) Len() int           { return len(b) }
-func (b byHostname) Swap(i, j int)      { b[i], b[j] = b[j], b[i] }
-func (b byHostname) Less(i, j int) bool { return strings.Compare(b[i].Val, b[j].Val) < 0 }
+func (b byVal) Len() int           { return len(b) }
+func (b byVal) Swap(i, j int)      { b[i], b[j] = b[j], b[i] }
+func (b byVal) Less(i, j int) bool { return strings.Compare(b[i].Val, b[j].Val) < 0 }
 
 func macaddrList(cmd *cobra.Command, args []string) {
 	filter := ""
@@ -118,7 +118,7 @@ func macaddrList(cmd *cobra.Command, args []string) {
 		filter = args[0]
 	}
 
-	pairs, err := keystore.List(strings.TrimSuffix(MacMap, "/"))
+	pairs, err := keystore.List(strings.TrimSuffix(MacAddrs, "/"))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -126,9 +126,9 @@ func macaddrList(cmd *cobra.Command, args []string) {
 
 	switch sortby {
 	case "mac":
-		sort.Sort(byMac(pairs))
+		sort.Sort(byKey(pairs))
 	case "host":
-		sort.Sort(byHostname(pairs))
+		sort.Sort(byVal(pairs))
 	case "":
 	default:
 		cmd.UsageFunc()(cmd)
@@ -140,7 +140,7 @@ func macaddrList(cmd *cobra.Command, args []string) {
 			continue
 		}
 
-		fmt.Println(strings.TrimPrefix(p.Key, MacMap), p.Val)
+		fmt.Println(strings.TrimPrefix(p.Key, MacAddrs), p.Val)
 	}
 }
 
@@ -152,7 +152,7 @@ func macaddrSave(cmd *cobra.Command, args []string) {
 
 	filename := args[0]
 
-	pairs, err := keystore.List(MacMap)
+	pairs, err := keystore.List(MacAddrs)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -166,7 +166,7 @@ func macaddrSave(cmd *cobra.Command, args []string) {
 	defer file.Close()
 
 	for _, p := range pairs {
-		fmt.Fprintf(file, "%s %s\n", strings.TrimPrefix(p.Key, MacMap), p.Val)
+		fmt.Fprintf(file, "%s %s\n", strings.TrimPrefix(p.Key, MacAddrs), p.Val)
 	}
 }
 
@@ -194,7 +194,7 @@ func macaddrRestore(cmd *cobra.Command, args []string) {
 	}
 
 	for mac, hostname := range macaddrs {
-		if err := keystore.Set(MacMap+mac, hostname); err != nil {
+		if err := keystore.Set(MacAddrs+mac, hostname); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
