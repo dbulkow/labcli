@@ -3,7 +3,9 @@ package main
 import (
 	"bytes"
 	"encoding/hex"
+	"errors"
 	"fmt"
+	"net"
 	"os"
 	"strings"
 	"time"
@@ -16,7 +18,7 @@ import (
 
 func init() {
 	setengCmd := &cobra.Command{
-		Use:   "seteng <ftServer-vtm#>",
+		Use:   "seteng <ftServer-vtm# or IP address>",
 		Short: "Enable eng/eng on a BMC",
 		Long:  "Enable the eng account (password eng) on a BMC",
 		Run:   seteng,
@@ -29,6 +31,40 @@ func init() {
 	RootCmd.AddCommand(setengCmd)
 }
 
+func setengMapLookup(hostname string) (net.IP, error) {
+	addr, err := macapi.GetAddress(macmap, hostname)
+	if err != nil {
+		return nil, err
+	}
+
+	if addr == nil {
+		return nil, errors.New("BMC name unknown")
+	}
+
+	ip := net.ParseIP(addr.IP)
+
+	if ip == nil {
+		return nil, errors.New("IP parse failed")
+	}
+
+	return ip, nil
+}
+
+func setengNameLookup(hostname string) (net.IP, error) {
+	addrs, err := net.LookupHost(hostname)
+	if err != nil {
+		return nil, err
+	}
+
+	ip := net.ParseIP(addrs[0])
+
+	if ip == nil {
+		return nil, errors.New("IP parse failed")
+	}
+
+	return ip, nil
+}
+
 func seteng(cmd *cobra.Command, args []string) {
 	sshdebug := cmd.Flag("debug").Value.String() == "true"
 
@@ -37,17 +73,18 @@ func seteng(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	hostname := args[0]
-
-	addr, err := macapi.GetAddress(macmap, hostname)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-
-	if addr == nil {
-		fmt.Fprintln(os.Stderr, "BMC name unknown")
-		os.Exit(1)
+	ip := net.ParseIP(args[0])
+	if ip == nil {
+		var err error
+		ip, err = setengMapLookup(args[0])
+		if err != nil {
+			maperr := err
+			ip, err = setengNameLookup(args[0])
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Hostname not found:\nmacmap lookup error \"%v\"\nDNS lookup \"%v\"\n", maperr, err)
+				os.Exit(1)
+			}
+		}
 	}
 
 	config := &ssh.ClientConfig{
@@ -57,7 +94,7 @@ func seteng(cmd *cobra.Command, args []string) {
 		},
 	}
 
-	conn, err := ssh.Dial("tcp", addr.IP+":22", config)
+	conn, err := ssh.Dial("tcp", ip.String()+":22", config)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
