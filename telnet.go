@@ -45,11 +45,17 @@ func telnet(cmd *cobra.Command, args []string) {
 		return
 	}
 
+	/* start with COM2, but if not configured try COM1 */
 	cmdline := ""
+	if cab.COM2 != "" {
+		cmdline = cab.COM2
+	} else if cab.COM1 != "" {
+		cmdline = cab.COM1
+	}
+
+	/* user knows best, let them override */
 	if com1 {
 		cmdline = cab.COM1
-	} else {
-		cmdline = cab.COM2
 	}
 
 	if cmdline == "" {
